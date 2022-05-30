@@ -8,19 +8,23 @@
 import Foundation
 
 struct SetGame<Feature1, Feature2, Feature3, Feature4> where Feature1: CaseIterable, Feature1: Equatable, Feature2: CaseIterable, Feature2: Equatable, Feature3: CaseIterable, Feature3: Equatable, Feature4: CaseIterable, Feature4: Equatable {
+    
     typealias SetCard = Card<Feature1, Feature2, Feature3, Feature4>
     private(set) var cardDeck: Array<SetCard> = []
-    var cardsInGame: Array<SetCard> = []
-    private var startNumberOfCardsInGame = 12
-    var selectedCards: Array<SetCard> = []
-    var mismatchCards: Array<SetCard> = []
+    private(set) var cardsInGame: Array<SetCard> = []
+    private(set) var selectedCards: Array<SetCard> = []
+    private(set) var mismatchCards: Array<SetCard> = []
+    private(set) var discardedCards: Array<SetCard> = []
+    private let startNumberOfCardsInGame = 12
     
     mutating func newGame() {
         cardDeck = []
         cardsInGame = []
         selectedCards = []
         mismatchCards = []
-        startGame()
+        discardedCards = []
+        initializeGame()
+        dealStartCards(startNumberOfCardsInGame)
     }
     
     mutating func dealThreeCards() {
@@ -39,7 +43,7 @@ struct SetGame<Feature1, Feature2, Feature3, Feature4> where Feature1: CaseItera
     
     mutating func choose(_ card: SetCard) {
         mismatchCards = []
-        exchangeCards()
+        removeCards()
         let cardsInGame = cardsInGame.filter { $0.isMatched == false }
         if let chosenIndex = cardsInGame.firstIndex(where: { $0.id == card.id }) {
             if selectedCards.contains(card) {
@@ -57,12 +61,11 @@ struct SetGame<Feature1, Feature2, Feature3, Feature4> where Feature1: CaseItera
     }
     
     init() {
-        startGame()
+        initializeGame()
     }
     
-    
     //MARK: - Helper functions
-    private mutating func startGame() {
+    private mutating func initializeGame() {
         var identifier = 0
         for f1 in Feature1.allCases {
             for f2 in Feature2.allCases {
@@ -76,8 +79,11 @@ struct SetGame<Feature1, Feature2, Feature3, Feature4> where Feature1: CaseItera
             }
         }
         cardDeck.shuffle()
-        cardsInGame = Array(cardDeck[0..<startNumberOfCardsInGame])
-        for _ in 0..<startNumberOfCardsInGame {
+    }
+    
+    private mutating func dealStartCards(_ numberOfStartCards: Int) {
+        for _ in 0..<numberOfStartCards {
+            cardsInGame.append(cardDeck[0])
             cardDeck.remove(at: 0)
         }
     }
@@ -119,11 +125,24 @@ struct SetGame<Feature1, Feature2, Feature3, Feature4> where Feature1: CaseItera
             if card.isMatched == true {
                 if let selectedIndex = cardsInGame.firstIndex(where: { $0.id == card.id }) {
                     if cardDeck.count > 0 {
+                        discardedCards.append(card)
                         cardsInGame[selectedIndex] = cardDeck[0]
                         cardDeck.remove(at: 0)
                     } else {
+                        discardedCards.append(card)
                         cardsInGame.remove(at: selectedIndex)
                     }
+                }
+            }
+        }
+    }
+    
+    private mutating func removeCards() {
+        for card in cardsInGame {
+            if card.isMatched == true {
+                if let selectedIndex = cardsInGame.firstIndex(where: { $0.id == card.id }) {
+                    discardedCards.append(card)
+                    cardsInGame.remove(at: selectedIndex)
                 }
             }
         }

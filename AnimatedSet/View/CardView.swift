@@ -15,6 +15,7 @@ struct CardView: View {
     let selected: Bool
     let mismatch: Bool
     let matched: Bool
+    let faceUp: Bool
     
     var body: some View {
         let shapeAmountRange = 1...amount
@@ -36,34 +37,42 @@ struct CardView: View {
         }()
         
         GeometryReader { geometry in
-            ZStack {
-                let shape = RoundedRectangle(cornerRadius: min(geometry.size.width, geometry.size.height) / DrawingConstants.cornerRadiusScaleFactor)
-                shape.fill().foregroundColor(.white)
-                shape.strokeBorder(lineWidth: DrawingConstants.cardLineWidth)
-                VStack {
-                    ForEach((shapeAmountRange), id: \.self) {_ in
-                        ZStack {
-                            if type == "oval" {
-                                Oval().foregroundColor(shapeColor).opacity(shapeShading)
-                                Oval().stroke(shapeColor, lineWidth: DrawingConstants.shapeLineWidth)
-                            } else if type == "diamond" {
-                                Diamond().foregroundColor(shapeColor).opacity(shapeShading)
-                                Diamond().stroke(shapeColor, lineWidth: DrawingConstants.shapeLineWidth)
-                            } else {
-                                Squiggle().foregroundColor(shapeColor).opacity(shapeShading)
-                                Squiggle().stroke(shapeColor, lineWidth: DrawingConstants.shapeLineWidth)
+            let shape = RoundedRectangle(cornerRadius: min(geometry.size.width, geometry.size.height) / DrawingConstants.cornerRadiusScaleFactor)
+            if faceUp {
+                ZStack {
+                    shape.fill().foregroundColor(.white)
+                    shape.strokeBorder(lineWidth: mismatch ? DrawingConstants.cardLineWidth * 2.5 : DrawingConstants.cardLineWidth).foregroundColor(mismatch ? .red : .black)
+                        .animation(.linear(duration: 0.5), value: mismatch)
+                    VStack {
+                        ForEach((shapeAmountRange), id: \.self) {_ in
+                            ZStack {
+                                if type == "oval" {
+                                    Oval().foregroundColor(shapeColor).opacity(shapeShading)
+                                    Oval().stroke(shapeColor, lineWidth: DrawingConstants.shapeLineWidth)
+                                } else if type == "diamond" {
+                                    Diamond().foregroundColor(shapeColor).opacity(shapeShading)
+                                    Diamond().stroke(shapeColor, lineWidth: DrawingConstants.shapeLineWidth)
+                                } else {
+                                    Squiggle().foregroundColor(shapeColor).opacity(shapeShading)
+                                    Squiggle().stroke(shapeColor, lineWidth: DrawingConstants.shapeLineWidth)
+                                }
                             }
+                            .rotationEffect(Angle.degrees(matched ? 180 : 0))
+                            .animation(.linear(duration: 0.5), value: matched)
                         }
                     }
+                    .padding(min(geometry.size.width, geometry.size.height) / DrawingConstants.cardPaddingScaleFactor)
+                    if matched {
+                        shape.fill().foregroundColor(.green).opacity(DrawingConstants.opacityForSignalColor)
+                    } else if mismatch {
+                        shape.fill().foregroundColor(.red).opacity(DrawingConstants.opacityForSignalColor)
+                    } else if selected {
+                        shape.fill().foregroundColor(.yellow).opacity(DrawingConstants.opacityForSignalColor)
+                    }
                 }
-                .padding(min(geometry.size.width, geometry.size.height) / DrawingConstants.cardPaddingScaleFactor)
-                if matched {
-                    shape.fill().foregroundColor(.green).opacity(DrawingConstants.opacityForSignalColor)
-                } else if mismatch {
-                    shape.fill().foregroundColor(.red).opacity(DrawingConstants.opacityForSignalColor)
-                } else if selected {
-                    shape.fill().foregroundColor(.yellow).opacity(DrawingConstants.opacityForSignalColor)
-                }
+            } else {
+                shape.fill().foregroundColor(.gray)
+                shape.strokeBorder(lineWidth: DrawingConstants.cardLineWidth)
             }
         }
     }
